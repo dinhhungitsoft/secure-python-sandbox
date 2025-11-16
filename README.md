@@ -1,5 +1,11 @@
 # 🔒 Python Sandbox Executor
 
+[![Tests](https://github.com/dinhhungitsoft/secure-python-sandbox/actions/workflows/tests.yml/badge.svg)](https://github.com/dinhhungitsoft/secure-python-sandbox/actions/workflows/tests.yml)
+[![Build](https://github.com/dinhhungitsoft/secure-python-sandbox/actions/workflows/build.yml/badge.svg)](https://github.com/dinhhungitsoft/secure-python-sandbox/actions/workflows/build.yml)
+[![PyPI version](https://badge.fury.io/py/sandbox-executor.svg)](https://badge.fury.io/py/sandbox-executor)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A secure Python code execution library with **dual-mode architecture**: run code locally for fast development or connect to a remote API server for production workloads. Perfect for AI agents, code playgrounds, and educational platforms.
 
 ## ✨ Key Features
