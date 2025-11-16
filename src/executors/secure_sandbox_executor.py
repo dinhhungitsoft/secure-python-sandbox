@@ -62,9 +62,14 @@ class SecureSandboxExecutor:
     # Blacklist of dangerous modules
     DANGEROUS_MODULES = {
         'os', 'sys', 'subprocess', 'multiprocessing', 'threading',
-        'socket', 'urllib', 'requests', 'http', 'ftplib', 'smtplib',
         'importlib', 'imp', '__import__', 'eval', 'exec', 'compile',
         'open', 'file', 'input', 'raw_input',
+    }
+    
+    # Network-related modules (allowed if allow_network=True)
+    NETWORK_MODULES = {
+        'socket', 'urllib', 'requests', 'http', 'ftplib', 'smtplib',
+        'httplib', 'urllib2', 'urllib3', 'aiohttp', 'websocket',
     }
     
     def __init__(
@@ -124,8 +129,19 @@ class SecureSandboxExecutor:
                 
                 for module in modules:
                     base_module = module.split('.')[0]
+                    
+                    # Check if it's a network module
+                    if base_module in self.NETWORK_MODULES:
+                        if not self.allow_network:
+                            return False, f"Forbidden module (network disabled): {module}"
+                        # If network is allowed, continue to next module
+                        continue
+                    
+                    # Check if it's in dangerous modules
                     if base_module in self.DANGEROUS_MODULES:
                         return False, f"Forbidden module: {module}"
+                    
+                    # Check if it's in whitelist
                     if base_module not in self.allowed_modules:
                         return False, f"Module not in whitelist: {module}"
         
