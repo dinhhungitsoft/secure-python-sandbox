@@ -64,7 +64,7 @@ For Docker image publishing to GitHub Container Registry:
 **Triggers**: Push to main/develop, Pull Requests
 
 **What it does**:
-- ✅ Runs tests on Python 3.8-3.12
+- ✅ Runs tests on Python 3.9-3.12
 - ✅ Tests on Linux, Windows, macOS
 - ✅ Lints with flake8
 - ✅ Format check with black
@@ -224,7 +224,7 @@ on:
 ```yaml
 strategy:
   matrix:
-    python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    python-version: ['3.9', '3.10', '3.11', '3.12']
     os: [ubuntu-latest, windows-latest, macos-latest]
 ```
 

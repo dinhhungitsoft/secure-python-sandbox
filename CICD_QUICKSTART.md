@@ -119,7 +119,7 @@ docker run -p 8000:8000 python-sandbox:test
 
 ### When Pushing Code:
 1. **Tests workflow** runs:
-   - ✅ Test on Python 3.8-3.12
+   - ✅ Test on Python 3.9-3.12
    - ✅ Test on Linux/Windows/macOS
    - ✅ Lint & format check
    - ✅ Coverage report
