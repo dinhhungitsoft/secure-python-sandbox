@@ -84,8 +84,11 @@ class SandboxConfig(BaseModel):
         Example:
             config = SandboxConfig.from_env()
         """
+        mode_str = os.getenv(f"{prefix}MODE", "secure")
+        mode = ExecutionMode(mode_str) if isinstance(mode_str, str) else mode_str
+        
         return cls(
-            mode=os.getenv(f"{prefix}MODE", "secure"),
+            mode=mode,
             timeout=int(os.getenv(f"{prefix}TIMEOUT", "30")),
             allow_network=os.getenv(f"{prefix}ALLOW_NETWORK", "false").lower() in ("true", "1", "yes"),
             max_output_size=int(os.getenv(f"{prefix}MAX_OUTPUT_SIZE", str(1024 * 1024))),

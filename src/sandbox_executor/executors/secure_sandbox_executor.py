@@ -29,7 +29,7 @@ import base64
 import resource
 import signal
 import threading
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple, Any
 from pathlib import Path
 import ast
 import builtins
@@ -97,7 +97,7 @@ class SecureSandboxExecutor:
         self.allow_network = allow_network
         self.allowed_modules = allowed_modules or self.SAFE_MODULES
     
-    def _validate_code_ast(self, code: str) -> tuple[bool, Optional[str]]:
+    def _validate_code_ast(self, code: str) -> Tuple[bool, Optional[str]]:
         """
         Validate code using AST analysis to detect dangerous operations
         
@@ -162,7 +162,8 @@ class SecureSandboxExecutor:
         # Add safe modules
         for module_name in self.allowed_modules:
             try:
-                safe_globals[module_name] = __import__(module_name)
+                imported_module: Any = __import__(module_name)
+                safe_globals[module_name] = imported_module
             except ImportError:
                 pass
         

@@ -2,7 +2,7 @@
 Main executor module - Unified interface for sandbox execution
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
 import base64
 
@@ -189,7 +189,7 @@ class SandboxExecutor:
                 raise
             raise SandboxException(f"Execution failed: {str(e)}") from e
     
-    def validate_code(self, code: str) -> tuple[bool, Optional[str]]:
+    def validate_code(self, code: str) -> Tuple[bool, Optional[str]]:
         """
         Validate code without executing it
         
@@ -200,7 +200,7 @@ class SandboxExecutor:
             Tuple of (is_valid, error_message)
         """
         if hasattr(self._backend, '_validate_code_ast'):
-            return self._backend._validate_code_ast(code)
+            return self._backend._validate_code_ast(code)  # type: ignore[no-any-return]
         
         # Simple validation for simple mode
         try:

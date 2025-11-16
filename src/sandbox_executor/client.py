@@ -9,7 +9,7 @@ This client provides a unified interface that can execute code either:
 The client automatically switches between modes based on whether a server URL is provided.
 """
 
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Tuple
 import base64
 from dataclasses import dataclass
 
@@ -169,6 +169,8 @@ class SandboxClient:
             )
             return executor.execute(code, input_files)
         
+        if self._local_executor is None:
+            raise SandboxException("Local executor not initialized")
         return self._local_executor.execute(code, input_files)
     
     def _execute_remote(
@@ -180,7 +182,7 @@ class SandboxClient:
     ) -> ExecutionResult:
         """Execute code via remote API"""
         try:
-            import requests
+            import requests  # type: ignore[import-untyped]
         except ImportError:
             raise SandboxException(
                 "requests library is required for remote execution. "
@@ -236,7 +238,7 @@ class SandboxClient:
         except Exception as e:
             raise SandboxException(f"Remote execution failed: {str(e)}") from e
     
-    def validate_code(self, code: str) -> tuple[bool, Optional[str]]:
+    def validate_code(self, code: str) -> Tuple[bool, Optional[str]]:
         """
         Validate code without executing it
         
@@ -247,7 +249,9 @@ class SandboxClient:
             Tuple of (is_valid, error_message)
         """
         if self.is_local:
-            return self._local_executor.validate_code(code)
+            if self._local_executor is None:
+                raise SandboxException("Local executor not initialized")
+            return self._local_executor.validate_code(code)  # type: ignore[no-any-return]
         else:
             # For remote, we can only do basic syntax check
             try:
@@ -271,30 +275,36 @@ class SandboxClient:
         else:
             # Check remote server
             try:
-                import requests
+                import requests  # type: ignore[import-untyped]
                 response = requests.get(
                     f"{self.server_url}/",
                     timeout=5
                 )
-                return response.status_code == 200
+                return bool(response.status_code == 200)
             except:
                 return False
     
-    def get_mode_info(self) -> Dict[str, Union[str, bool]]:
+    def get_mode_info(self) -> Dict[str, Union[str, bool, int]]:
         """
         Get information about the current execution mode
         
         Returns:
             Dictionary with mode information
         """
-        return {
+        info: Dict[str, Union[str, bool, int]] = {
             "execution_type": "local" if self.is_local else "remote",
-            "server_url": self.server_url,
             "timeout": self.timeout,
             "allow_network": self.allow_network,
-            "mode": self.mode.value if self.is_local else "N/A",
-            "max_memory_mb": self.max_memory_mb if self.is_local else "N/A",
         }
+        if self.server_url:
+            info["server_url"] = self.server_url
+        if self.is_local:
+            info["mode"] = self.mode.value
+            info["max_memory_mb"] = self.max_memory_mb
+        else:
+            info["mode"] = "N/A"
+            info["max_memory_mb"] = "N/A"
+        return info
     
     def __repr__(self) -> str:
         mode_type = "Local" if self.is_local else f"Remote({self.server_url})"

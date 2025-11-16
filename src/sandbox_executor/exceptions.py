@@ -1,6 +1,7 @@
 """
 Custom exceptions for Sandbox Executor
 """
+from typing import Optional
 
 
 class SandboxException(Exception):
@@ -27,7 +28,7 @@ class SecurityViolationError(SandboxException):
 class CodeValidationError(SandboxException):
     """Raised when code fails validation checks"""
     
-    def __init__(self, message: str, line: int = None):
+    def __init__(self, message: str, line: Optional[int] = None):
         self.line = line
         line_info = f" at line {line}" if line else ""
         super().__init__(f"Code validation failed{line_info}: {message}")
