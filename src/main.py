@@ -120,6 +120,9 @@ async def execute_code(request: ExecuteRequest):
         
         return ExecuteResponse(**result)
     
+    except HTTPException:
+        # Re-raise HTTPException to preserve status code
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,

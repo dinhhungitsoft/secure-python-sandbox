@@ -9,7 +9,7 @@ import base64
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.executors.secure_sandbox_executor import SecureSandboxExecutor
+from src.sandbox_executor.executors.secure_sandbox_executor import SecureSandboxExecutor
 
 
 class TestSecureSandboxExecutor(unittest.TestCase):

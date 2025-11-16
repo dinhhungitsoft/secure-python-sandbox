@@ -233,12 +233,14 @@ old_stderr = sys.stderr
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
 
+exit_code = 0
 try:
     # Execute user code
 {self._indent_code(user_code, 4)}
 except Exception as e:
     import traceback
     sys.stderr.write(traceback.format_exc())
+    exit_code = 1
 finally:
     signal.alarm(0)  # Cancel timeout
     
@@ -255,6 +257,9 @@ finally:
     print("<<<STDERR_START>>>")
     print(stderr_content)
     print("<<<STDERR_END>>>")
+    
+    # Exit with appropriate code
+    sys.exit(exit_code)
 '''
         return wrapper
     
