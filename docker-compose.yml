@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  python-sandbox:
+    build: .
+    container_name: python-sandbox-secure
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./executions:/app/executions
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SANDBOX_TIMEOUT=30
+      - SANDBOX_ALLOW_NETWORK=false
+      - EXECUTION_MODE=secure  # Secure mode - no Docker socket needed
+    restart: unless-stopped
+    # Resource limits to protect the system
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
