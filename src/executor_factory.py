@@ -8,8 +8,8 @@ Factory class to initialize executor strategies based on execution mode.
 from typing import Optional, Union, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .executors.sandbox_executor import SandboxExecutor
-    from .executors.secure_sandbox_executor import SecureSandboxExecutor
+    from sandbox_executor.executors.sandbox_executor import SandboxExecutor
+    from sandbox_executor.executors.secure_sandbox_executor import SecureSandboxExecutor
 
 
 class ExecutorFactory:
@@ -61,7 +61,7 @@ class ExecutorFactory:
         **kwargs
     ) -> Any:  # Changed from SecureSandboxExecutor
         """Create Secure executor"""
-        from .executors.secure_sandbox_executor import SecureSandboxExecutor
+        from sandbox_executor.executors.secure_sandbox_executor import SecureSandboxExecutor
         return SecureSandboxExecutor(
             timeout=timeout,
             max_output_size=max_output_size,
@@ -77,7 +77,7 @@ class ExecutorFactory:
         allow_network: bool
     ) -> Any:  # Changed from SandboxExecutor
         """Create Simple executor"""
-        from .executors.sandbox_executor import SandboxExecutor
+        from sandbox_executor.executors.sandbox_executor import SandboxExecutor
         return SandboxExecutor(
             timeout=timeout,
             max_output_size=max_output_size,

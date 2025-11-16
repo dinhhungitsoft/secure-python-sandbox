@@ -1,36 +1,344 @@
-# Python Code Sandbox
+# 🔒 Python Sandbox Executor
 
-A secure, platform-agnostic Python code execution API with multi-layered security features. Execute untrusted Python code safely in an isolated environment with resource limits, network restrictions, and filesystem isolation.
+A secure Python code execution library with **dual-mode architecture**: run code locally for fast development or connect to a remote API server for production workloads. Perfect for AI agents, code playgrounds, and educational platforms.
 
-## 🌟 Features
+## ✨ Key Features
 
-- **🔒 Multi-layered Security**: AST validation, restricted imports, sandboxed execution
-- **🌐 Platform Agnostic**: Works on Linux, Windows, Mac, Docker, Kubernetes, and serverless platforms (AWS Fargate, Azure Container Apps, Google Cloud Run)
-- **⚡ Fast & Lightweight**: Minimal overhead with efficient resource management
-- **📁 File I/O Support**: Upload input files and retrieve output files (base64-encoded)
-- **🎯 Resource Limits**: CPU, memory, and execution time constraints
-- **🚫 Network Control**: Optional network access blocking
-- **📊 RESTful API**: Simple HTTP API built with FastAPI
-- **🐳 Docker Ready**: Pre-configured Docker and Docker Compose setup
+- 🏠 **Local Execution**: Direct subprocess execution for fast iteration and debugging
+- 🌐 **Remote Execution**: HTTP client for connecting to sandbox API servers
+- 🔄 **Unified Interface**: Same API works for both local and remote modes
+- 🤖 **AI Agent Ready**: Easy integration with LangChain, AutoGen, and custom agents
+- **Multi-layered Security**: AST validation, resource limits, network control
+- 📁 **File I/O Support**: Upload input files and retrieve output files
+- ⚡ **Platform Agnostic**: Works on Linux, Windows, macOS, Docker, Kubernetes, and serverless
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/dinhhungitsoft/secure-python-sandbox.git
+cd secure-python-sandbox
+
+# Install the package (includes local + remote client)
+pip install -e .
+
+# Optional: Install with API server support
+pip install -e ".[api]"
+```
+
+## 💡 Usage Modes
+
+### Mode 1: Local Execution (Development)
+
+**Best for**: Development, debugging, fast iteration, local AI agents
+
+**How it works**: Executes code directly on your machine using subprocess isolation
+
+**Installation**:
+```bash
+pip install -e .
+```
+
+**Example**:
+```python
+from sandbox_executor import SandboxClient
+
+# Create client without server_url = local execution
+client = SandboxClient()
+
+code = """
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+result = [fibonacci(i) for i in range(10)]
+print("Fibonacci:", result)
+"""
+
+result = client.execute(code)
+print(result.stdout)
+# Output: Fibonacci: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+```
+
+**Advantages**:
+- ⚡ **Fastest**: No network overhead
+- 🐛 **Easy debugging**: Direct execution with full error messages
+- 🔧 **Simple setup**: No server required
+- 💻 **Offline capable**: Works without internet
+
+**Use cases**:
+- Local development and testing
+- AI agent prototyping
+- Educational tools
+- Code snippets execution
+- Quick scripts and automation
+
+---
+
+### Mode 2: Remote Execution (Production)
+
+**Best for**: Production, scaling, untrusted code, multi-tenant systems
+
+**How it works**: Sends code to a remote API server via HTTP requests
+
+**Installation**:
+```bash
+# Install package with remote support (already included in core)
+pip install -e .
+
+# Set up API server
+pip install -e ".[api]"
+docker-compose up -d  # Start the sandbox API server
+```
+
+**Example**:
+```python
+from sandbox_executor import SandboxClient
+
+# Create client with server_url = remote execution
+client = SandboxClient(
+    server_url="http://localhost:8000",
+    timeout=30
+)
+
+code = """
+import math
+
+radius = 5
+area = math.pi * radius ** 2
+print(f"Circle area: {area:.2f}")
+"""
+
+result = client.execute(code)
+print(result.stdout)
+# Output: Circle area: 78.54
+```
+
+**Advantages**:
+- 🔒 **Enhanced security**: Code runs in isolated containers
+- 📈 **Scalable**: Handle multiple concurrent executions
+- 🌐 **Distributed**: Execute code on powerful remote machines
+- 🛡️ **Better isolation**: Full container-level isolation
+
+**Use cases**:
+- Production AI agents
+- Multi-tenant code execution platforms
+- Online code playgrounds
+- Serverless functions
+- Educational platforms with many users
+
+---
+
+## 🎯 Comparison: Local vs Remote
+
+| Feature | Local Execution | Remote Execution |
+|---------|----------------|------------------|
+| **Speed** | ⚡ Fastest (no network) | 🌐 Network latency |
+| **Setup** | ✅ Zero config | ⚙️ Needs API server |
+| **Security** | 🛡️ Process isolation | 🔒 Container isolation |
+| **Scalability** | 💻 Single machine | 📈 Distributed |
+| **Use Case** | 🐛 Development | 🚀 Production |
+| **Internet** | ❌ Not required | ✅ Required |
+
+## Configuration
+
+### Local Mode Configuration
+
+```python
+from sandbox_executor import SandboxClient, ClientConfig, ExecutionMode
+
+config = ClientConfig(
+    server_url=None,  # None = local execution
+    mode=ExecutionMode.SECURE,
+    timeout=60,
+    allow_network=False,
+    max_memory_mb=256
+)
+
+client = SandboxClient.from_config(config)
+```
+
+### Remote Mode Configuration
+
+```python
+from sandbox_executor import SandboxClient, ClientConfig
+
+config = ClientConfig(
+    server_url="http://your-api-server.com",
+    timeout=30,
+    api_timeout=60,  # HTTP request timeout
+    api_key="your-secret-key"  # Optional authentication
+)
+
+client = SandboxClient.from_config(config)
+```
+
+### Environment Variables
+
+Create a `.env` file:
+```bash
+SANDBOX_MODE=secure
+SANDBOX_TIMEOUT=30
+SANDBOX_ALLOW_NETWORK=false
+SANDBOX_MAX_MEMORY_MB=128
+```
+
+Load automatically:
+```python
+client = SandboxClient.from_env()
+```
+
+## Advanced Examples
+
+### Working with Files
+
+```python
+from sandbox_executor import SandboxClient
+
+client = SandboxClient()
+
+# Provide input files
+input_files = {
+    "data.csv": b"id,value\n1,100\n2,200\n3,300\n"
+}
+
+code = """
+import csv
+
+# Read CSV
+with open('data.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    data = list(reader)
+
+# Calculate total
+total = sum(int(row['value']) for row in data)
+print(f"Total: {total}")
+
+# Write output
+with open('result.txt', 'w') as f:
+    f.write(f"Sum: {total}\\n")
+"""
+
+result = client.execute(code, input_files=input_files)
+print(result.stdout)  # Total: 600
+
+# Get output file
+output = result.get_file_content('result.txt')
+print(output.decode())  # Sum: 600
+```
+
+### AI Agent Integration
+
+```python
+from sandbox_executor import SandboxClient
+
+class PythonExecutorTool:
+    """Tool for AI agents to execute Python code"""
+    
+    name = "python_executor"
+    description = "Execute Python code safely in a sandbox"
+    
+    def __init__(self, use_remote=False):
+        # Switch between local and remote based on environment
+        server_url = "http://api.example.com" if use_remote else None
+        self.client = SandboxClient(server_url=server_url)
+    
+    def run(self, code: str) -> str:
+        """Execute code and return output"""
+        result = self.client.execute(code)
+        return result.stdout if result.success else f"Error: {result.stderr}"
+
+# For development (local)
+tool = PythonExecutorTool(use_remote=False)
+
+# For production (remote)
+tool = PythonExecutorTool(use_remote=True)
+```
+
+### Error Handling
+
+```python
+from sandbox_executor import SandboxClient, SandboxException
+
+client = SandboxClient()
+
+code = "print(1/0)"  # Will raise ZeroDivisionError
+
+try:
+    result = client.execute(code)
+    if not result.success:
+        print(f"Execution failed with code {result.return_code}")
+        print(f"Error: {result.stderr}")
+except SandboxException as e:
+    print(f"Sandbox error: {e}")
+```
+
+## 🐳 Running the API Server (Remote Mode)
+
+### Using Docker Compose (Recommended)
+
+```bash
+# Start the server
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f
+
+# Stop the server
+docker-compose down
+```
+
+### Using Docker
+
+```bash
+# Build image
+docker build -t python-sandbox .
+
+# Run container
+docker run -d -p 8000:8000 \
+  -e EXECUTION_MODE=secure \
+  -e SANDBOX_TIMEOUT=30 \
+  python-sandbox
+```
+
+### Manual Setup
+
+```bash
+# Install with API dependencies
+pip install -e ".[api]"
+
+# Run server
+uvicorn src.main:app --host 0.0.0.0 --port 8000
+```
+
+### API Documentation
+
+Once the server is running, visit:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+### API Endpoints
+
+#### `GET /` - Health Check
+```bash
+curl http://localhost:8000/
+```
+
+#### `POST /execute` - Execute Code
+```bash
+curl -X POST http://localhost:8000/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "print(\"Hello, World!\")",
+    "timeout": 30,
+    "allow_network": false
+  }'
+```
 
 ## 🏗️ Architecture
-
-The project uses a **Factory Pattern** with automatic fallback for executor selection:
-
-### Execution Modes
-
-1. **Secure Mode (Default)** - Platform-agnostic multi-layered security:
-   - RestrictedPython AST filtering
-   - Import whitelist/blacklist
-   - Resource limits (CPU, memory, processes)
-   - Filesystem isolation with temporary directories
-   - Network blocking (optional)
-   - Execution timeout enforcement
-
-2. **Simple Mode** - Basic subprocess isolation:
-   - Process-level isolation
-   - Basic timeout and resource limits
-   - Suitable for trusted environments
 
 ### Security Layers
 
@@ -50,208 +358,49 @@ The project uses a **Factory Pattern** with automatic fallback for executor sele
 └─────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+### Execution Modes
 
-### Using Docker Compose (Recommended)
+**Secure Mode (Default)**:
+- AST validation and restricted imports
+- Resource limits (CPU, memory, processes)
+- Filesystem isolation with temporary directories
+- Network blocking (configurable)
+- Execution timeout enforcement
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd python_sandbox
-   ```
+**Simple Mode**:
+- Basic subprocess isolation
+- Timeout and output limits
+- Suitable for trusted code
 
-2. **Start the service**:
-   ```bash
-   docker-compose up -d
-   ```
+## 📚 Examples
 
-3. **Test the API**:
-   ```bash
-   curl http://localhost:8000/
-   ```
+See the [`examples/`](./examples/) directory for complete examples:
 
-The API will be available at `http://localhost:8000`.
+- **`basic_usage.py`** - Basic execution patterns
+- **`client_usage.py`** - Local vs Remote client usage  
+- **`agent_integration.py`** - AI agent integration examples
+- **`with_files.py`** - Working with input/output files
+- **`security_tests.py`** - Security feature demonstrations
 
-### Manual Setup
-
-1. **Install Python 3.11+**:
-   ```bash
-   python --version  # Should be 3.11 or higher
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run the server**:
-   ```bash
-   uvicorn src.main:app --host 0.0.0.0 --port 8000
-   ```
-
-## 📖 API Documentation
-
-### Endpoints
-
-#### `GET /`
-Health check endpoint.
-
-**Response**:
-```json
-{
-  "status": "ok",
-  "message": "Python Code Sandbox API is running",
-  "version": "1.0.0"
-}
+Run examples:
+```bash
+python examples/basic_usage.py
+python examples/client_usage.py
+python examples/agent_integration.py
 ```
-
-#### `POST /execute`
-Execute Python code in a secure sandbox.
-
-**Request Body**:
-```json
-{
-  "code": "print('Hello, World!')",
-  "timeout": 30,
-  "allow_network": false,
-  "files": {
-    "input.txt": "SGVsbG8gV29ybGQ="
-  }
-}
-```
-
-**Parameters**:
-- `code` (string, required): Python code to execute
-- `timeout` (integer, optional): Execution timeout in seconds (1-300, default: 30)
-- `allow_network` (boolean, optional): Allow network access (default: false)
-- `files` (object, optional): Input files as base64-encoded strings
-
-**Response**:
-```json
-{
-  "stdout": "Hello, World!\n",
-  "stderr": "",
-  "return_code": 0,
-  "output_files": {
-    "output.txt": "SGVsbG8gV29ybGQ="
-  }
-}
-```
-
-**Response Fields**:
-- `stdout` (string): Standard output from execution
-- `stderr` (string): Standard error from execution
-- `return_code` (integer): Process exit code (0 = success)
-- `output_files` (object): Output files as base64-encoded strings
-
-### Interactive API Documentation
-
-Once the server is running, visit:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-## 📚 Usage Examples
-
-### Basic Execution
-
-```python
-import requests
-
-response = requests.post('http://localhost:8000/execute', json={
-    'code': '''
-import math
-print(f"Pi = {math.pi}")
-print(f"Square root of 16 = {math.sqrt(16)}")
-'''
-})
-
-result = response.json()
-print(result['stdout'])
-# Output: 
-# Pi = 3.141592653589793
-# Square root of 16 = 4.0
-```
-
-### Working with Files
-
-```python
-import requests
-import base64
-
-# Prepare input file
-input_data = "Line 1\nLine 2\nLine 3"
-input_base64 = base64.b64encode(input_data.encode()).decode()
-
-# Execute code that reads and writes files
-response = requests.post('http://localhost:8000/execute', json={
-    'code': '''
-with open('input.txt', 'r') as f:
-    lines = f.readlines()
-
-with open('output.txt', 'w') as f:
-    for i, line in enumerate(lines, 1):
-        f.write(f"{i}. {line}")
-''',
-    'files': {
-        'input.txt': input_base64
-    }
-})
-
-# Decode output file
-result = response.json()
-output_base64 = result['output_files']['output.txt']
-output_data = base64.b64decode(output_base64).decode()
-print(output_data)
-# Output:
-# 1. Line 1
-# 2. Line 2
-# 3. Line 3
-```
-
-### Error Handling
-
-```python
-import requests
-
-response = requests.post('http://localhost:8000/execute', json={
-    'code': 'print(1/0)'  # Division by zero
-})
-
-result = response.json()
-print(f"Return Code: {result['return_code']}")
-print(f"Error: {result['stderr']}")
-```
-
-More examples available in the [`examples/`](./examples/) directory.
 
 ## ⚙️ Configuration
 
 ### Environment Variables
 
-Configure the sandbox behavior using environment variables (in `.env` or `docker-compose.yml`):
+Configure the sandbox behavior using environment variables (in `.env`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `EXECUTION_MODE` | `secure` | Execution mode: `secure` or `simple` |
+| `SANDBOX_MODE` | `secure` | Execution mode: `secure` or `simple` |
 | `SANDBOX_TIMEOUT` | `30` | Default execution timeout (seconds) |
 | `SANDBOX_ALLOW_NETWORK` | `false` | Allow network access by default |
-
-### Docker Compose Configuration
-
-Edit `docker-compose.yml` to customize:
-
-```yaml
-environment:
-  - EXECUTION_MODE=secure
-  - SANDBOX_TIMEOUT=30
-  - SANDBOX_ALLOW_NETWORK=false
-
-deploy:
-  resources:
-    limits:
-      cpus: '1.0'
-      memory: 512M
-```
+| `SANDBOX_MAX_MEMORY_MB` | `128` | Maximum memory usage (MB) |
 
 ### Security Configuration
 
@@ -298,29 +447,19 @@ The secure executor includes configurable whitelists and blacklists:
 
 ## 🧪 Testing
 
-The project includes a comprehensive test suite with 58+ unit tests covering all components.
-
-### Running Tests
-
 ```bash
-# Run all tests
-python tests/run_tests.py
+# Install dev dependencies
+pip install -e ".[dev]"
 
-# Run with pytest (recommended)
-pip install pytest pytest-cov
+# Run all tests
 pytest
 
-# Run with coverage report
+# Run with coverage
 pytest --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/test_sandbox_executor.py
 ```
-
-### Test Coverage
-
-- ✅ ExecutorFactory (8 tests)
-- ✅ SandboxExecutor (13 tests)
-- ✅ SecureSandboxExecutor (12 tests)
-- ✅ API Endpoints (17 tests)
-- ✅ Integration Tests (8 tests)
 
 See [`tests/README.md`](./tests/README.md) for detailed testing documentation.
 
@@ -331,81 +470,43 @@ See [`tests/README.md`](./tests/README.md) for detailed testing documentation.
 ```
 python_sandbox/
 ├── src/
-│   ├── main.py                    # FastAPI application
-│   ├── executor_factory.py        # Executor factory with fallback
-│   └── executors/
-│       ├── sandbox_executor.py    # Base executor interface
-│       └── secure_sandbox_executor.py  # Secure executor implementation
-├── examples/                      # Usage examples
-│   ├── simple_execute.py
-│   ├── with_files.py
-│   ├── with_multipart.py
-│   ├── test_network.py
-│   ├── test_secure_mode.py
-│   └── security_tests.py
-├── docker-compose.yml             # Docker Compose configuration
-├── Dockerfile                     # Docker image definition
-├── requirements.txt               # Python dependencies
-└── README.md                      # This file
+│   ├── main.py                          # FastAPI application (API server)
+│   ├── executor_factory.py              # Legacy factory pattern
+│   └── sandbox_executor/                # Main package
+│       ├── __init__.py                  # Package exports
+│       ├── client.py                    # Unified client (local/remote)
+│       ├── executor.py                  # Local executor
+│       ├── config.py                    # Configuration classes
+│       ├── exceptions.py                # Custom exceptions
+│       └── executors/                   # Backend implementations
+│           ├── sandbox_executor.py      # Simple mode
+│           └── secure_sandbox_executor.py  # Secure mode
+├── examples/                            # Usage examples
+│   ├── basic_usage.py                   # Basic patterns
+│   ├── client_usage.py                  # Local vs Remote
+│   ├── agent_integration.py             # AI agent examples
+│   └── ...
+├── tests/                               # Test suite
+├── docker-compose.yml                   # Docker Compose config
+├── Dockerfile                           # Docker image
+└── pyproject.toml                       # Package configuration
 ```
-
-### Running Tests
-
-```bash
-# Run security tests
-python examples/security_tests.py
-
-# Test secure mode
-python examples/test_secure_mode.py
-
-# Test network blocking
-python examples/test_network.py
-```
-
-### Adding New Features
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/your-feature`
-3. **Make your changes**
-4. **Test thoroughly**
-5. **Submit a pull request**
 
 ## 🚢 Deployment
 
-### Docker
-
+### Local Development
 ```bash
-# Build image
-docker build -t python-sandbox .
-
-# Run container
-docker run -p 8000:8000 python-sandbox
+pip install -e .
+python examples/basic_usage.py
 ```
 
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: python-sandbox
-spec:
-  replicas: 3
-  template:
-    spec:
-      containers:
-      - name: python-sandbox
-        image: python-sandbox:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: EXECUTION_MODE
-          value: "secure"
-        resources:
-          limits:
-            cpu: "1"
-            memory: "512Mi"
+### API Server (Docker)
+```bash
+docker-compose up -d
 ```
+
+## Documentation
+- **[examples/](./examples/)** - Code examples
 
 ### Cloud Platforms
 
@@ -416,32 +517,28 @@ The sandbox is compatible with:
 - **Heroku**: Deploy as Docker container
 - **DigitalOcean App Platform**: Deploy as Docker app
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ## 📞 Support
 
-- **Documentation**: Check the [examples](./examples/) directory
-- **Issues**: Report bugs or request features via GitHub Issues
-- **API Docs**: Visit http://localhost:8000/docs when running
+- **GitHub Issues**: [Report bugs or request features](https://github.com/dinhhungitsoft/secure-python-sandbox/issues)
+- **Examples**: Check the [examples/](./examples/) directory
+- **API Docs**: Visit http://localhost:8000/docs when running the server
 
-## 🙏 Acknowledgments
+## ⭐ Star History
 
-- Built with [FastAPI](https://fastapi.tiangolo.com/)
-- Security inspired by [RestrictedPython](https://github.com/zopefoundation/RestrictedPython)
-- Docker containerization for additional isolation
+If you find this project useful, please give it a star! ⭐
 
 ---
 
-**⚠️ Warning**: This sandbox provides multiple layers of security but is not foolproof. Always run in isolated environments and implement additional security measures for production use.
+**Made with ❤️ for the Python & AI community**
+
+**⚠️ Security Note**: While this sandbox provides multiple layers of security, no sandbox is 100% foolproof. Always run in isolated environments and implement additional security measures for production use with untrusted code.

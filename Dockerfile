@@ -12,12 +12,13 @@ RUN groupadd -r sandbox && \
 # Create working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy source code
+# Copy package files first (better caching)
+COPY pyproject.toml setup.py ./
 COPY src/ ./src/
+
+# Install the package with API dependencies
+# This installs: pydantic, python-dotenv, fastapi, uvicorn
+RUN pip install --no-cache-dir -e ".[api]"
 
 # Create directories for file uploads and executions
 RUN mkdir -p /app/uploads /app/executions && \
@@ -29,6 +30,11 @@ USER sandbox
 
 # Expose port
 EXPOSE 8000
+
+# Environment variables (can be overridden)
+ENV EXECUTION_MODE=secure
+ENV SANDBOX_TIMEOUT=30
+ENV SANDBOX_ALLOW_NETWORK=false
 
 # Run the application
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
